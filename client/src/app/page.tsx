@@ -1,38 +1,26 @@
-export default function Home() {
-  const board = [
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 2, 0, 2, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  ];
+"use client";
+import React from "react";
+function page() {
+  function connect() {
+    const socket=new WebSocket("ws://127.0.0.1:5000/echo")
+    socket.onopen=(event)=>{
+      const data={
+        message:"Here's some text that the server is urgently awaiting!",
+        num:1999
+      }
+      console.log(data)
+      socket.send(JSON.stringify(data));
+      
+    }
+  }
   return (
-    <>
-      <div className="h-screen w-screen pt-28 flex justify-center bg-whitw">
-        <div>
-          {board.map((row: number[],rowIndex:number) => (
-            <div key={rowIndex} className="flex">
-              {row.map((col: number,colIndex:number) => (
-                <div key={colIndex} className="h-14 w-14 text-white border-2 flex justify-center pt-1.5">
-                  <div
-                    className={`border-1 rounded-full h-10 w-10 ${
-                      col === 0
-                        ? "bg-white"
-                        : col === 1
-                        ? "bg-red-400"
-                        : "bg-yellow-400"
-                    }`}
-                  ></div>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
+    <div className="h-screen w-sreen flex justify-center">
+      <div className="flex flex-col pt-40 gap-y-10">
+        <button onClick={() => connect()}>create session</button>
+        <button>join session</button>
       </div>
-    </>
+    </div>
   );
 }
+
+export default page;
