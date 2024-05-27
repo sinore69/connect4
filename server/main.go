@@ -12,12 +12,15 @@ type App struct {
 	Message string
 	Num     int
 }
+type RoomId struct {
+	Id int
+}
 type Rooms struct {
 	ActiveRooms map[int]players
 }
 type players struct {
 	Creator chan board
-	player  chan board
+	Player  chan board
 }
 type board struct {
 	board [][]int
@@ -55,18 +58,28 @@ func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
-	
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
+	for {
+		var id RoomId
+		err := conn.ReadJSON(&id)
+		if err != nil {
+			panic(err)
+		}
+	 	session:=room.ActiveRooms[id.Id]
+		session.Player=make(chan board)
+		room.ActiveRooms[id.Id]=session
+		log.Println(room.ActiveRooms)
+	}
 }
 
 func main() {
 	var room Rooms = *NewRoom()
-	http.HandleFunc("/echo", room.CreateRoom)
-	http.HandleFunc("/echo", room.JoinRoom)
+	http.HandleFunc("/create", room.CreateRoom)
+	http.HandleFunc("/join", room.JoinRoom)
 	log.Println("Server started at :5000")
 	err := http.ListenAndServe(":5000", nil)
 	if err != nil {
