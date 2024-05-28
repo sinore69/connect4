@@ -37,17 +37,20 @@ func NewRoom() *Rooms {
 		ActiveRooms: make(map[int]players),
 	}
 }
-
 func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		panic(err)
 	}
-	defer conn.Close()
+	ch:=make(chan board)
 	room.ActiveRooms[generator.NewRoomId()] = players{
-		Creator: make(chan board),
+		Creator: ch,
 	}
+	readerCh := (chan<- board)(ch)
+	go reader(&readerCh,conn)
 	log.Println(room.ActiveRooms)
+}
+func reader(ch *chan<- board,conn *websocket.Conn){
 	for {
 		var msg App
 		err := conn.ReadJSON(&msg)
@@ -57,25 +60,30 @@ func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		log.Println(msg)
 	}
 }
+func writer(){
+
+}
 func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		panic(err)
 	}
-	defer conn.Close()
-	for {
 		var id RoomId
-		err := conn.ReadJSON(&id)
+		err = conn.ReadJSON(&id)
 		if err != nil {
 			panic(err)
 		}
 	 	session:=room.ActiveRooms[id.Id]
-		session.Player=make(chan board)
+		if session.Creator==nil{
+			panic("no creator")
+		}
+		ch:=make(chan board)
+		session.Player=ch
 		room.ActiveRooms[id.Id]=session
 		log.Println(room.ActiveRooms)
-	}
+		readerCh:=(chan<-board)(ch)
+		go reader(&readerCh,conn)
 }
-
 func main() {
 	var room Rooms = *NewRoom()
 	http.HandleFunc("/create", room.CreateRoom)
