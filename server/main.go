@@ -8,9 +8,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type App struct {
+type IncorrectRoomIid struct {
 	Message string
-	Num     int
 }
 type RoomId struct {
 	Id int
@@ -59,7 +58,7 @@ func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
 }
 func reader(ch *chan<- board, conn *websocket.Conn) {
 	for {
-		var msg App
+		var msg IncorrectRoomIid
 		err := conn.ReadJSON(&msg)
 		if err != nil {
 			panic(err)
@@ -80,9 +79,15 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	session := room.ActiveRooms[id.Id]
+	session:= room.ActiveRooms[id.Id]
 	if session.Creator == nil {
-		panic("no creator")
+		error:=&IncorrectRoomIid{
+			Message: "No Such Room Id",
+		}
+		conn.WriteJSON(error)
+		return
+	}else{
+		conn.WriteJSON(id)
 	}
 	ch := make(chan board)
 	session.Player = ch

@@ -1,6 +1,8 @@
 "use client";
 import { useRouter } from "next/navigation";
 import React from "react";
+import { roomIdValidator } from "./validator/roomid";
+import {incorrectRoomId} from "./validator/icorrectroom";
 function page() {
   const router = useRouter();
   function connect() {
@@ -10,25 +12,31 @@ function page() {
     };
     socket.onmessage = (event) => {
       const roomId = JSON.parse(event.data);
-      console.log(roomId.Id);
-      if (roomId.Id !== undefined) {
+      console.log(roomId);
+      if (roomIdValidator(roomId)) {
         router.push(`/game/${roomId.Id}`);
       }
     };
   }
   async function handler(e: any) {
     e.preventDefault();
-    console.log(e.target.roomId.value);
     const socket = new WebSocket("ws://127.0.0.1:5000/join");
     socket.onopen = (event) => {
       const data = {
         id: Number(e.target.roomId.value),
       };
-      console.log(data);
       socket.send(JSON.stringify(data));
     };
     socket.onmessage = (event) => {
-      console.log(event.data);
+      const res=JSON.parse(event.data)
+      if(incorrectRoomId(res)){
+        console.log("incorrect room id")
+      }else{
+        
+          console.log(res.id)
+        router.push(`/game/${res.Id}`);
+      
+      }
     };
   }
   return (
