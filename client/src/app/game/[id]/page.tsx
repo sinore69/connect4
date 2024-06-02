@@ -20,10 +20,8 @@ function page({ params }: { params: { id: string } }) {
   useEffect(()=>{
     socket.onmessage=(event)=>{
       const res=JSON.parse(event.data) 
-      //console.log(res)
       const newboard=res.Board
       setboard([...newboard])
-      console.log(board)
     }
   },[board])
   function handleClick(rowIndex: number, colIndex: number) {
@@ -51,7 +49,7 @@ function page({ params }: { params: { id: string } }) {
                 >
                   <div
                     onClick={() => handleClick(rowIndex, colIndex)}
-                    className={`border-1 rounded-full h-10 w-10 text-cyan-500${
+                    className={`border-1 rounded-full h-10 w-10 ${
                       col === 0
                         ? "bg-white"
                         : col === 1
