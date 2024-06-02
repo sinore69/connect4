@@ -18,9 +18,9 @@ function page() {
     };
     socket.onmessage = (event) => {
       const roomId = JSON.parse(event.data);
-      console.log(roomId);
+      // console.log(roomId);
       if (roomIdValidator(roomId)) {
-        console.log(socket)
+        // console.log(socket)
         router.push(`/game/${roomId.Id}`);
       }
     };
@@ -37,12 +37,12 @@ function page() {
     };
     socket.onmessage = (event) => {
       const res=JSON.parse(event.data)
-      if(incorrectRoomId(res)){
-        console.log("incorrect room id")
-      }else{
-          console.log(socket)
+      if(!incorrectRoomId(res)){
         router.push(`/game/${res.Id}`);
+          // console.log(socket)
+      }else{
       
+        console.log("incorrect room id")
       }
     };
   }

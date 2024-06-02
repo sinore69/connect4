@@ -1,11 +1,11 @@
-"use client"
+"use client";
 import { RootState } from "@/app/state/connection";
-import React from "react";
-import { UseSelector, useDispatch, useSelector } from "react-redux";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 function page({ params }: { params: { id: string } }) {
   const socket = useSelector((state: RootState) => state.socket.socket);
   const dispatch = useDispatch();
-  const board = [
+  const[board,setboard]=useState<number[][]>([
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -15,8 +15,29 @@ function page({ params }: { params: { id: string } }) {
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  ];
-  console.log(socket)
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  ])
+  useEffect(()=>{
+    socket.onmessage=(event)=>{
+      const res=JSON.parse(event.data) 
+      //console.log(res)
+      const newboard=res.Board
+      setboard([...newboard])
+      console.log(board)
+    }
+  },[board])
+  function handleClick(rowIndex: number, colIndex: number) {
+    board[rowIndex][colIndex] = 1;
+    const data = {
+      Board: board,
+      MoveCount: 1,
+      LastMove: {
+        RowIndex: rowIndex,
+        ColIdex: colIndex,
+      },
+    };
+    socket.send(JSON.stringify(data));
+  }
   return (
     <>
       <div className="h-screen w-screen pt-28 flex justify-center bg-whitw">
@@ -29,7 +50,8 @@ function page({ params }: { params: { id: string } }) {
                   className="h-14 w-14 text-white border-2 flex justify-center pt-1.5"
                 >
                   <div
-                    className={`border-1 rounded-full h-10 w-10 ${
+                    onClick={() => handleClick(rowIndex, colIndex)}
+                    className={`border-1 rounded-full h-10 w-10 text-cyan-500${
                       col === 0
                         ? "bg-white"
                         : col === 1

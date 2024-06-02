@@ -4,25 +4,13 @@ import (
 	"log"
 	"net/http"
 	generator "server/generate"
+	TypeOf "server/types"
 
 	"github.com/gorilla/websocket"
 )
 
-type IncorrectRoomIid struct {
-	Message string
-}
-type RoomId struct {
-	Id int
-}
 type Rooms struct {
-	ActiveRooms map[int]players
-}
-type players struct {
-	Creator chan board
-	Player  chan board
-}
-type board struct {
-	board [][]int
+	ActiveRooms map[int]TypeOf.Players
 }
 
 var upgrader = websocket.Upgrader{
@@ -33,7 +21,7 @@ var upgrader = websocket.Upgrader{
 
 func NewRoom() *Rooms {
 	return &Rooms{
-		ActiveRooms: make(map[int]players),
+		ActiveRooms: make(map[int]TypeOf.Players),
 	}
 }
 func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
@@ -41,62 +29,66 @@ func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	ch := make(chan board)
 	id := generator.NewRoomId()
-	room.ActiveRooms[id] = players{
-		Creator: ch,
+	room.ActiveRooms[id] = TypeOf.Players{
+		Creator: conn,
 	}
-	roomId := &RoomId{
+	roomId := &TypeOf.RoomId{
 		Id: id,
 	}
-	readerCh := (chan<- board)(ch)
-	writerCh := (<-chan board)(ch)
-	go reader(&readerCh, conn)
-	go writer(&writerCh, conn)
+	//	go reader(conn)
 	conn.WriteJSON(roomId)
 	log.Println(room.ActiveRooms)
 }
-func reader(ch *chan<- board, conn *websocket.Conn) {
+func reader(conn *websocket.Conn, session *TypeOf.Players) {
 	for {
-		var msg IncorrectRoomIid
-		err := conn.ReadJSON(&msg)
+		var board TypeOf.Board
+		err := conn.ReadJSON(&board)
 		if err != nil {
 			panic(err)
 		}
-		log.Println(msg)
+		log.Println(board)
+		//do board logic
+		// combine both write logic into oneboard
+		// and call inside reader function
+		newBoard := updateState(&board)
+		writer(session, newBoard)
 	}
 }
-func writer(ch *<-chan board, conn *websocket.Conn) {
-
+func updateState(board *TypeOf.Board) *TypeOf.Board {
+	board.Board[board.LastMove.RowIndex][board.LastMove.ColIndex] = 1
+	return board
+}
+func writer(session *TypeOf.Players, newBoard *TypeOf.Board) {
+	creator, player := session.Creator, session.Player
+	creator.WriteJSON(&newBoard)
+	player.WriteJSON(&newBoard)
 }
 func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		panic(err)
 	}
-	var id RoomId
+	var id TypeOf.RoomId
 	err = conn.ReadJSON(&id)
 	if err != nil {
 		panic(err)
 	}
-	session:= room.ActiveRooms[id.Id]
+	session := room.ActiveRooms[id.Id]
 	if session.Creator == nil {
-		error:=&IncorrectRoomIid{
+		error := &TypeOf.IncorrectRoomIid{
 			Message: "No Such Room Id",
 		}
 		conn.WriteJSON(error)
 		return
-	}else{
+	} else {
 		conn.WriteJSON(id)
 	}
-	ch := make(chan board)
-	session.Player = ch
+	session.Player = conn
 	room.ActiveRooms[id.Id] = session
 	log.Println(room.ActiveRooms)
-	readerCh := (chan<- board)(ch)
-	writerCh := (<-chan board)(ch)
-	go reader(&readerCh, conn)
-	go writer(&writerCh, conn)
+	go reader(session.Creator, &session)
+	go reader(session.Player, &session)
 }
 func main() {
 	var room Rooms = *NewRoom()
