@@ -25,13 +25,11 @@ function page({ params }: { params: { id: string } }) {
     }
   },[board])
   function handleClick(rowIndex: number, colIndex: number) {
-    board[rowIndex][colIndex] = 1;
     const data = {
       Board: board,
-      MoveCount: 1,
       LastMove: {
         RowIndex: rowIndex,
-        ColIdex: colIndex,
+        ColIndex: colIndex,
       },
     };
     socket.send(JSON.stringify(data));

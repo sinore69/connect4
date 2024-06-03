@@ -5,7 +5,7 @@ import (
 	"net/http"
 	generator "server/generate"
 	TypeOf "server/types"
-
+	Game "server/game"
 	"github.com/gorilla/websocket"
 )
 
@@ -36,31 +36,24 @@ func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	roomId := &TypeOf.RoomId{
 		Id: id,
 	}
-	//	go reader(conn)
 	conn.WriteJSON(roomId)
 	log.Println(room.ActiveRooms)
 }
 func reader(conn *websocket.Conn, session *TypeOf.Players) {
+	var board TypeOf.Board
 	for {
-		var board TypeOf.Board
 		err := conn.ReadJSON(&board)
 		if err != nil {
 			panic(err)
 		}
-		log.Println(board)
-		//do board logic
-		// combine both write logic into oneboard
-		// and call inside reader function
-		newBoard := updateState(&board)
+		newBoard := Game.UpdateState(&board)
 		writer(session, newBoard)
 	}
 }
-func updateState(board *TypeOf.Board) *TypeOf.Board {
-	board.Board[board.LastMove.RowIndex][board.LastMove.ColIndex] = 1
-	return board
-}
+
 func writer(session *TypeOf.Players, newBoard *TypeOf.Board) {
 	creator, player := session.Creator, session.Player
+	log.Println(newBoard)
 	creator.WriteJSON(&newBoard)
 	player.WriteJSON(&newBoard)
 }
