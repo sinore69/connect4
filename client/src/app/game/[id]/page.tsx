@@ -2,20 +2,21 @@
 import { RootState } from "@/app/state/connection";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-type board={
-  Board:number[][],
-  MoveCount:number,
-LastMove:{
-  RowIndex:number,
-  ColIndex:number
-}
-}
+type board = {
+  Board: number[][];
+  MoveCount: number;
+  Disable: boolean;
+  LastMove: {
+    RowIndex: number;
+    ColIndex: number;
+  };
+};
 function page({ params }: { params: { id: string } }) {
   const socket = useSelector((state: RootState) => state.socket.socket);
   const dispatch = useDispatch();
-  const [disable,setdisable]=useState<boolean>(false)
-  const [moveCount,setMoveCount]=useState<number>(0)
-  const[board,setboard]=useState<number[][]>([
+  const [disable, setdisable] = useState<boolean>(false);
+  const [moveCount, setMoveCount] = useState<number>(0);
+  const [board, setboard] = useState<number[][]>([
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -26,19 +27,21 @@ function page({ params }: { params: { id: string } }) {
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  ])
-  useEffect(()=>{
-    socket.onmessage=(event)=>{
-      const res=JSON.parse(event.data) 
-      const newboard=res.Board
-      setboard([...newboard])
-      setMoveCount(res.moveCount)
-    }
-  },[board])
+  ]);
+  useEffect(() => {
+    socket.onmessage = (event) => {
+      const res = JSON.parse(event.data);
+      const newboard = res.Board;
+      setboard([...newboard]);
+      setMoveCount(res.moveCount);
+      setdisable(res.Disable)
+    };
+  }, [board]);
   function handleClick(rowIndex: number, colIndex: number) {
-    const data:board = {
+    const data: board = {
       Board: board,
-      MoveCount:moveCount,
+      MoveCount: moveCount,
+      Disable: disable,
       LastMove: {
         RowIndex: rowIndex,
         ColIndex: colIndex,
@@ -54,8 +57,8 @@ function page({ params }: { params: { id: string } }) {
             <div key={rowIndex} className="flex">
               {row.map((col: number, colIndex: number) => (
                 <button
-                disabled={disable || col===0?false:true}
-                onClick={() => handleClick(rowIndex, colIndex)}
+                  disabled={disable}
+                  onClick={() => handleClick(rowIndex, colIndex)}
                   key={colIndex}
                   className="h-14 w-14 text-white border-2 flex justify-center pt-1.5"
                 >

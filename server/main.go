@@ -5,6 +5,7 @@ import (
 	"net/http"
 	generator "server/generate"
 	TypeOf "server/types"
+
 	//Game "server/game"
 	"github.com/gorilla/websocket"
 )
@@ -15,6 +16,7 @@ type Rooms struct {
 type Board struct {
 	Board     [10][10]int
 	MoveCount int
+	Disable   bool
 	LastMove  TypeOf.LastMove
 }
 
@@ -50,23 +52,33 @@ func (board *Board) reader(conn *websocket.Conn, session *TypeOf.Players) {
 		if err != nil {
 			panic(err)
 		}
-		newBoard := UpdateState(board)
+		newBoard := UpdateState(board, session)
 		writer(session, newBoard)
 	}
 }
-func UpdateState(board *Board) *Board {
+func UpdateState(board *Board, session *TypeOf.Players) *Board {
+	if board.Board[board.LastMove.RowIndex][board.LastMove.ColIndex] != 0 {
+		return board
+	}
 	board.MoveCount++
 	if board.MoveCount%2 == 0 {
 		board.Board[board.LastMove.RowIndex][board.LastMove.ColIndex] = 1
+		session.DisableCreator = false
+		session.DisablePlayer = true
 	} else {
 		board.Board[board.LastMove.RowIndex][board.LastMove.ColIndex] = 2
+		session.DisableCreator = true
+		session.DisablePlayer = false
 	}
 	return board
 }
 func writer(session *TypeOf.Players, newBoard *Board) {
 	creator, player := session.Creator, session.Player
 	log.Println(newBoard)
+	log.Println(session)
+	newBoard.Disable = session.DisableCreator
 	creator.WriteJSON(&newBoard)
+	newBoard.Disable = session.DisablePlayer
 	player.WriteJSON(&newBoard)
 }
 func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +104,7 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	session.Player = conn
 	room.ActiveRooms[id.Id] = session
 	log.Println(room.ActiveRooms)
-	board:=Board{}
+	board := Board{}
 	go board.reader(session.Creator, &session)
 	go board.reader(session.Player, &session)
 }

@@ -11,7 +11,9 @@ type RoomId struct {
 
 type Players struct {
 	Creator *websocket.Conn
+	DisableCreator bool
 	Player  *websocket.Conn
+	DisablePlayer bool
 }
 type LastMove struct {
 	RowIndex int
