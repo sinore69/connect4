@@ -6,7 +6,7 @@ interface Socket{
 }
 
 const initialState:Socket={
-    socket:new WebSocket("")
+    socket:new WebSocket("ws://127.0.0.1:3000/create")
 }
 
 const SocketSlice=createSlice({

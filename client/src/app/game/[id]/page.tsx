@@ -3,6 +3,7 @@ import { RootState } from "@/app/state/connection";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { isInitialState } from "@/app/validator/gamestate";
+import { useAppSelector,useAppDispatch } from "@/app/lib/hooks";
 type board = {
   Board: number[][];
   MoveCount: number;
@@ -12,9 +13,9 @@ type board = {
     ColIndex: number;
   };
 };
-function page({ params }: { params: { id: string } }) {
-  const socket = useSelector((state: RootState) => state.socket.socket);
-  const dispatch = useDispatch();
+function Page({ params }: { params: { id: string } }) {
+  const socket = useAppSelector(state=>state.socket.socket)
+  const dispatch =useAppDispatch();
   const [disable, setdisable] = useState<boolean>(true);
   const [moveCount, setMoveCount] = useState<number>(0);
   const [board, setboard] = useState<number[][]>([
@@ -41,7 +42,7 @@ function page({ params }: { params: { id: string } }) {
         setdisable(res.Disable);
       }
     };
-  }, []);
+  }, [socket,board]);
   function handleClick(rowIndex: number, colIndex: number) {
     const data: board = {
       Board: board,
@@ -86,4 +87,4 @@ function page({ params }: { params: { id: string } }) {
   );
 }
 
-export default page;
+export default Page;

@@ -3,13 +3,13 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { roomIdValidator } from "./validator/roomid";
 import {incorrectRoomId} from "./validator/incorrectroom";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "./state/connection";
 import { create,join } from "./state/websocket/websocketslice";
-function page() {
+import { useAppDispatch, useAppSelector, useAppStore } from "./lib/hooks";
+function Page() {
   const router = useRouter();
-  const dispatch=useDispatch()
-  const connection=useSelector((state:RootState)=>state.socket.socket)
+  const dispatch=useAppDispatch()
+  const store=useAppStore()
+  const connection=useAppSelector(state=>state.socket.socket)
   function connect() {
     const socket = new WebSocket("ws://127.0.0.1:5000/create");
     dispatch(create(socket))
@@ -58,4 +58,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;
