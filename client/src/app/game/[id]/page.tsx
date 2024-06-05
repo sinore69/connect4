@@ -2,6 +2,7 @@
 import { RootState } from "@/app/state/connection";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { isInitialState } from "@/app/validator/gamestate";
 type board = {
   Board: number[][];
   MoveCount: number;
@@ -14,7 +15,7 @@ type board = {
 function page({ params }: { params: { id: string } }) {
   const socket = useSelector((state: RootState) => state.socket.socket);
   const dispatch = useDispatch();
-  const [disable, setdisable] = useState<boolean>(false);
+  const [disable, setdisable] = useState<boolean>(true);
   const [moveCount, setMoveCount] = useState<number>(0);
   const [board, setboard] = useState<number[][]>([
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -31,12 +32,16 @@ function page({ params }: { params: { id: string } }) {
   useEffect(() => {
     socket.onmessage = (event) => {
       const res = JSON.parse(event.data);
-      const newboard = res.Board;
-      setboard([...newboard]);
-      setMoveCount(res.moveCount);
-      setdisable(res.Disable)
+      if (isInitialState(res)) {
+        setdisable(res.Disable);
+      } else {
+        const newboard = res.Board;
+        setboard([...newboard]);
+        setMoveCount(res.moveCount);
+        setdisable(res.Disable);
+      }
     };
-  }, [board]);
+  }, []);
   function handleClick(rowIndex: number, colIndex: number) {
     const data: board = {
       Board: board,

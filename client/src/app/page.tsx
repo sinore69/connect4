@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import React from "react";
 import { roomIdValidator } from "./validator/roomid";
-import {incorrectRoomId} from "./validator/icorrectroom";
+import {incorrectRoomId} from "./validator/incorrectroom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "./state/connection";
 import { create,join } from "./state/websocket/websocketslice";
@@ -41,7 +41,6 @@ function page() {
         router.push(`/game/${res.Id}`);
           // console.log(socket)
       }else{
-      
         console.log("incorrect room id")
       }
     };

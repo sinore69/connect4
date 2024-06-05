@@ -6,10 +6,12 @@ import (
 	generator "server/generate"
 	TypeOf "server/types"
 
-	//Game "server/game"
 	"github.com/gorilla/websocket"
 )
 
+type InitialState struct {
+	Disable bool
+}
 type Rooms struct {
 	ActiveRooms map[int]TypeOf.Players
 }
@@ -99,14 +101,21 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		conn.WriteJSON(error)
 		return
 	} else {
-		conn.WriteJSON(id)
+		conn.WriteJSON(&id)
 	}
 	session.Player = conn
 	room.ActiveRooms[id.Id] = session
 	log.Println(room.ActiveRooms)
 	board := Board{}
+	initialstate(&session)
 	go board.reader(session.Creator, &session)
 	go board.reader(session.Player, &session)
+}
+func initialstate(session *TypeOf.Players) {
+	disable := InitialState{
+		Disable: false,
+	}
+	session.Creator.WriteJSON(disable)
 }
 func main() {
 	var room Rooms = *NewRoom()
