@@ -9,6 +9,9 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+type Message struct{
+	Text string
+}
 type InitialState struct {
 	Disable bool
 }
@@ -56,13 +59,28 @@ func (board *Board) reader(conn *websocket.Conn, session *TypeOf.Players) {
 		}
 		newBoard := UpdateState(board, session)
 		if 	game.Checkwin(newBoard.Board,newBoard.LastMove.RowIndex,newBoard.LastMove.ColIndex) {
-			freezestate(session)
-			//then write to client
-			//final state of board
-			//and that a pplayer won 
+			endgame(session,newBoard)
+			break
 		}
 		writer(session, newBoard)
 	}
+}
+func endgame(session *TypeOf.Players,newBoard *Board){
+			freezestate(session)
+			writer(session,newBoard)
+			winningmsg:=Message{
+				Text: "You Won",
+			}
+			losingmsg:=Message{
+				Text:"Your Opponent Won",
+			}
+			if newBoard.MoveCount%2==0{
+				session.Creator.WriteJSON(losingmsg)
+				session.Player.WriteJSON(winningmsg)
+			}else{
+				session.Creator.WriteJSON(winningmsg)
+				session.Player.WriteJSON(losingmsg)
+			}
 }
 func freezestate(session *TypeOf.Players) {
 	session.DisableCreator = true

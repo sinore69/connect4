@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { isInitialState } from "@/app/validator/gamestate";
 import { useAppSelector,useAppDispatch } from "@/app/lib/hooks";
+import { isMessage } from "@/app/validator/message";
 type board = {
   Board: number[][];
   MoveCount: number;
@@ -35,7 +36,10 @@ function Page({ params }: { params: { id: string } }) {
       const res = JSON.parse(event.data);
       if (isInitialState(res)) {
         setdisable(res.Disable);
-      } else {
+      }else if(isMessage(res)){
+        console.log(event.data)
+      } 
+      else {
         const newboard = res.Board;
         setboard([...newboard]);
         setMoveCount(res.moveCount);
