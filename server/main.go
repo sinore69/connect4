@@ -5,7 +5,7 @@ import (
 	"net/http"
 	generator "server/generate"
 	TypeOf "server/types"
-
+	"server/game"
 	"github.com/gorilla/websocket"
 )
 
@@ -55,9 +55,20 @@ func (board *Board) reader(conn *websocket.Conn, session *TypeOf.Players) {
 			panic(err)
 		}
 		newBoard := UpdateState(board, session)
+		if 	game.Checkwin(newBoard.Board,newBoard.LastMove.RowIndex,newBoard.LastMove.ColIndex) {
+			freezestate(session)
+			//then write to client
+			//final state of board
+			//and that a pplayer won 
+		}
 		writer(session, newBoard)
 	}
 }
+func freezestate(session *TypeOf.Players) {
+	session.DisableCreator = true
+	session.DisablePlayer = true
+}
+
 func UpdateState(board *Board, session *TypeOf.Players) *Board {
 	if board.Board[board.LastMove.RowIndex][board.LastMove.ColIndex] != 0 {
 		return board
