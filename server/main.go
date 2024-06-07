@@ -13,16 +13,14 @@ import (
 type Message struct {
 	Text string
 }
-
 type InitialState struct {
 	Disable bool
 }
-
 type Rooms struct {
 	ActiveRooms map[int]TypeOf.Players
 }
-
 type Board struct {
+	Id        int
 	Board     [10][10]int
 	MoveCount int
 	Disable   bool
@@ -57,23 +55,25 @@ func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	log.Println(room.ActiveRooms)
 }
 
-func (board *Board) reader(conn *websocket.Conn, session *TypeOf.Players) {
+func (board *Board) reader(conn *websocket.Conn, room *Rooms) {
+	defer delete(room.ActiveRooms,board.Id)
 	for {
 		err := conn.ReadJSON(&board)
 		if err != nil {
 			panic(err)
 		}
-		newBoard := UpdateState(board, session)
+		session:=room.ActiveRooms[board.Id]
+		newBoard := UpdateState(board, &session)
 		if game.Checkwin(newBoard.Board, newBoard.LastMove.RowIndex, newBoard.LastMove.ColIndex) {
-			endgame(session, newBoard, false)
+			endgame(&session, newBoard, false)
 			break
 		}
 		if game.BoardCompleted(newBoard.Board) {
 			log.Println("error")
-			endgame(session, newBoard, true)
+			endgame(&session, newBoard, true)
 			break
 		}
-		writer(session, newBoard)
+		writer(&session, newBoard)
 	}
 }
 
@@ -104,8 +104,8 @@ func endgame(session *TypeOf.Players, newBoard *Board, boardcompleted bool) {
 }
 
 func freezestate(session *TypeOf.Players) {
-session.DisableCreator = true
-session.DisablePlayer = true
+	session.DisableCreator = true
+	session.DisablePlayer = true
 }
 
 func UpdateState(board *Board, session *TypeOf.Players) *Board {
@@ -158,10 +158,12 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	session.Player = conn
 	room.ActiveRooms[id.Id] = session
 	log.Println(room.ActiveRooms)
-	board := Board{}
+	board := Board{
+		Id: id.Id,
+	}
 	initialstate(&session)
-	go board.reader(session.Creator, &session)
-	go board.reader(session.Player, &session)
+	go board.reader(session.Creator, room)
+	go board.reader(session.Player, room)
 }
 
 func initialstate(session *TypeOf.Players) {
