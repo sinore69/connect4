@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit'
 import socketSliceReducer from "./websocket/websocketslice"
+import MessageSliceReducer from './websocket/messageslice'
   export const connection=()=>{
     return configureStore({
       reducer:{
-        socket:socketSliceReducer
+        socket:socketSliceReducer,
+        Message:MessageSliceReducer
       },
       middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

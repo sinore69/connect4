@@ -1,15 +1,17 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import React from "react";
 import { roomIdValidator } from "./validator/roomid";
 import {incorrectRoomId} from "./validator/incorrectroom";
 import { create,join } from "./state/websocket/websocketslice";
 import { useAppDispatch, useAppSelector, useAppStore } from "./lib/hooks";
+
 function Page() {
   const router = useRouter();
   const dispatch=useAppDispatch()
-  const store=useAppStore()
   const connection=useAppSelector(state=>state.socket.socket)
+
   function connect() {
     const socket = new WebSocket("ws://127.0.0.1:5000/create");
     dispatch(create(socket))
@@ -25,6 +27,7 @@ function Page() {
       }
     };
   }
+
   async function handler(e: any) {
     e.preventDefault();
     const socket = new WebSocket("ws://127.0.0.1:5000/join");
@@ -45,6 +48,7 @@ function Page() {
       }
     };
   }
+  
   return (
     <div className="h-screen w-sreen flex justify-center">
       <div className="flex flex-col pt-40 gap-y-10">

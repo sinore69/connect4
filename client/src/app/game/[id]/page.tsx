@@ -1,10 +1,11 @@
 "use client";
-import { RootState } from "@/app/state/connection";
+
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { isInitialState } from "@/app/validator/gamestate";
 import { useAppSelector,useAppDispatch } from "@/app/lib/hooks";
 import { isMessage } from "@/app/validator/message";
+import { replace } from "@/app/state/websocket/messageslice";
+
 type board = {
   Board: number[][];
   MoveCount: number;
@@ -14,8 +15,11 @@ type board = {
     ColIndex: number;
   };
 };
+
 function Page({ params }: { params: { id: string } }) {
+
   const socket = useAppSelector(state=>state.socket.socket)
+  const message=useAppSelector(state=>state.Message.Text)
   const dispatch =useAppDispatch();
   const [disable, setdisable] = useState<boolean>(true);
   const [moveCount, setMoveCount] = useState<number>(0);
@@ -38,6 +42,7 @@ function Page({ params }: { params: { id: string } }) {
         setdisable(res.Disable);
       }else if(isMessage(res)){
         console.log(event.data)
+        dispatch(replace(res.Text))
       } 
       else {
         const newboard = res.Board;
@@ -47,6 +52,7 @@ function Page({ params }: { params: { id: string } }) {
       }
     };
   }, [socket,board]);
+
   function handleClick(rowIndex: number, colIndex: number) {
     const data: board = {
       Board: board,
@@ -59,6 +65,7 @@ function Page({ params }: { params: { id: string } }) {
     };
     socket.send(JSON.stringify(data));
   }
+
   return (
     <>
       <div className="h-screen w-screen pt-28 flex justify-center bg-whitw">
@@ -86,6 +93,7 @@ function Page({ params }: { params: { id: string } }) {
             </div>
           ))}
         </div>
+        <div className="pl-52">{message}</div>
       </div>
     </>
   );

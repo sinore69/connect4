@@ -13,12 +13,15 @@ import (
 type Message struct {
 	Text string
 }
+
 type InitialState struct {
 	Disable bool
 }
+
 type Rooms struct {
 	ActiveRooms map[int]TypeOf.Players
 }
+
 type Board struct {
 	Board     [10][10]int
 	MoveCount int
@@ -37,6 +40,7 @@ func NewRoom() *Rooms {
 		ActiveRooms: make(map[int]TypeOf.Players),
 	}
 }
+
 func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -52,6 +56,7 @@ func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	conn.WriteJSON(roomId)
 	log.Println(room.ActiveRooms)
 }
+
 func (board *Board) reader(conn *websocket.Conn, session *TypeOf.Players) {
 	for {
 		err := conn.ReadJSON(&board)
@@ -71,6 +76,7 @@ func (board *Board) reader(conn *websocket.Conn, session *TypeOf.Players) {
 		writer(session, newBoard)
 	}
 }
+
 func endgame(session *TypeOf.Players, newBoard *Board, boardcompleted bool) {
 	freezestate(session)
 	writer(session, newBoard)
@@ -96,9 +102,10 @@ func endgame(session *TypeOf.Players, newBoard *Board, boardcompleted bool) {
 		session.Player.WriteJSON(losingmsg)
 	}
 }
+
 func freezestate(session *TypeOf.Players) {
-	session.DisableCreator = true
-	session.DisablePlayer = true
+session.DisableCreator = true
+session.DisablePlayer = true
 }
 
 func UpdateState(board *Board, session *TypeOf.Players) *Board {
@@ -117,6 +124,7 @@ func UpdateState(board *Board, session *TypeOf.Players) *Board {
 	}
 	return board
 }
+
 func writer(session *TypeOf.Players, newBoard *Board) {
 	creator, player := session.Creator, session.Player
 	log.Println(newBoard)
@@ -126,6 +134,7 @@ func writer(session *TypeOf.Players, newBoard *Board) {
 	newBoard.Disable = session.DisablePlayer
 	player.WriteJSON(&newBoard)
 }
+
 func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -154,12 +163,14 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	go board.reader(session.Creator, &session)
 	go board.reader(session.Player, &session)
 }
+
 func initialstate(session *TypeOf.Players) {
 	disable := InitialState{
 		Disable: false,
 	}
 	session.Creator.WriteJSON(disable)
 }
+
 func main() {
 	var room Rooms = *NewRoom()
 	http.HandleFunc("/create", room.CreateRoom)
