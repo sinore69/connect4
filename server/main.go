@@ -3,13 +3,14 @@ package main
 import (
 	"log"
 	"net/http"
+	"server/game"
 	generator "server/generate"
 	TypeOf "server/types"
-	"server/game"
+
 	"github.com/gorilla/websocket"
 )
 
-type Message struct{
+type Message struct {
 	Text string
 }
 type InitialState struct {
@@ -58,29 +59,42 @@ func (board *Board) reader(conn *websocket.Conn, session *TypeOf.Players) {
 			panic(err)
 		}
 		newBoard := UpdateState(board, session)
-		if 	game.Checkwin(newBoard.Board,newBoard.LastMove.RowIndex,newBoard.LastMove.ColIndex) {
-			endgame(session,newBoard)
+		if game.Checkwin(newBoard.Board, newBoard.LastMove.RowIndex, newBoard.LastMove.ColIndex) {
+			endgame(session, newBoard, false)
+			break
+		}
+		if game.BoardCompleted(newBoard.Board) {
+			log.Println("error")
+			endgame(session, newBoard, true)
 			break
 		}
 		writer(session, newBoard)
 	}
 }
-func endgame(session *TypeOf.Players,newBoard *Board){
-			freezestate(session)
-			writer(session,newBoard)
-			winningmsg:=Message{
-				Text: "You Won",
-			}
-			losingmsg:=Message{
-				Text:"Your Opponent Won",
-			}
-			if newBoard.MoveCount%2==0{
-				session.Creator.WriteJSON(losingmsg)
-				session.Player.WriteJSON(winningmsg)
-			}else{
-				session.Creator.WriteJSON(winningmsg)
-				session.Player.WriteJSON(losingmsg)
-			}
+func endgame(session *TypeOf.Players, newBoard *Board, boardcompleted bool) {
+	freezestate(session)
+	writer(session, newBoard)
+	if boardcompleted {
+		drawmsg := Message{
+			Text: "Draw",
+		}
+		session.Creator.WriteJSON(drawmsg)
+		session.Player.WriteJSON(drawmsg)
+		return
+	}
+	winningmsg := Message{
+		Text: "You Won",
+	}
+	losingmsg := Message{
+		Text: "Your Opponent Won",
+	}
+	if newBoard.MoveCount%2 == 0 {
+		session.Creator.WriteJSON(losingmsg)
+		session.Player.WriteJSON(winningmsg)
+	} else {
+		session.Creator.WriteJSON(winningmsg)
+		session.Player.WriteJSON(losingmsg)
+	}
 }
 func freezestate(session *TypeOf.Players) {
 	session.DisableCreator = true

@@ -34,7 +34,10 @@ func TestCheckwin(t *testing.T) {
 	}
 	//diagonal test
 	if Checkwin(test8()) == false {
-		t.Error("error in test7")
+		t.Error("error in test8")
+	}
+if Checkwin(test9()) == false {
+		t.Error("error in test9")
 	}
 }
 func test1() ([10][10]int, int, int) {
@@ -100,4 +103,12 @@ func test8() ([10][10]int, int, int) {
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 2}}
 	return arr, 0, 0
+}
+func test9() ([10][10]int, int, int) {
+	arr := [10][10]int{{0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, {0, 1, 0, 0, 0, 0, 0, 0, 2, 0},
+		{0, 2, 0, 0, 0, 0, 0, 2, 0, 0}, {0, 0, 0, 1, 0, 0, 2, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+	return arr, 0, 9
 }
