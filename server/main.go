@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"server/game"
@@ -45,35 +46,69 @@ func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	id := generator.NewRoomId()
+	//done := make(chan bool)
 	room.ActiveRooms[id] = TypeOf.Players{
-		Creator: conn,
+		Creator:          conn,
+		//CloseDummyReader: &done,
 	}
 	roomId := &TypeOf.RoomId{
 		Id: id,
 	}
 	conn.WriteJSON(roomId)
+	//close := make(chan bool)
+	//go dummyreader(done, conn, room, id, close)
 	log.Println(room.ActiveRooms)
+	//<-close
 }
 
-func (board *Board) reader(conn *websocket.Conn, room *Rooms) {
-	defer delete(room.ActiveRooms,board.Id)
+func dummyreader(done <-chan bool, conn *websocket.Conn, room *Rooms, id int, close chan<- bool) {
+	defer log.Println("closing")
+outer:
 	for {
-		err := conn.ReadJSON(&board)
-		if err != nil {
-			panic(err)
+		select {
+		case <-done:
+			log.Println("breaking")
+			break outer
+		default:
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				delete(room.ActiveRooms, id)
+				conn.Close()
+				break outer
+			}
 		}
-		session:=room.ActiveRooms[board.Id]
-		newBoard := UpdateState(board, &session)
-		if game.Checkwin(newBoard.Board, newBoard.LastMove.RowIndex, newBoard.LastMove.ColIndex) {
-			endgame(&session, newBoard, false)
-			break
+	}
+	close <- true
+}
+
+func (board *Board) reader(conn *websocket.Conn, room *Rooms, done chan<- bool, ctx context.Context) {
+	defer conn.Close()
+	defer delete(room.ActiveRooms, board.Id)
+outer:
+	for {
+		select {
+		case <-ctx.Done():
+			break outer
+		default:
+			err := conn.ReadJSON(&board)
+			if err != nil {
+				log.Println("connection lost")
+				done <- true
+				break outer
+			}
+			session := room.ActiveRooms[board.Id]
+			newBoard := UpdateState(board, &session)
+			if game.Checkwin(newBoard.Board, newBoard.LastMove.RowIndex, newBoard.LastMove.ColIndex) {
+				endgame(&session, newBoard, false)
+				break outer
+			}
+			if game.BoardCompleted(newBoard.Board) {
+				log.Println("error")
+				endgame(&session, newBoard, true)
+				break outer
+			}
+			writer(&session, newBoard)
 		}
-		if game.BoardCompleted(newBoard.Board) {
-			log.Println("error")
-			endgame(&session, newBoard, true)
-			break
-		}
-		writer(&session, newBoard)
 	}
 }
 
@@ -146,6 +181,8 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	session := room.ActiveRooms[id.Id]
+	//*session.CloseDummyReader <- true
+	//close(*session.CloseDummyReader)
 	if session.Creator == nil {
 		error := &TypeOf.IncorrectRoomIid{
 			Message: "No Such Room Id",
@@ -162,8 +199,12 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		Id: id.Id,
 	}
 	initialstate(&session)
-	go board.reader(session.Creator, room)
-	go board.reader(session.Player, room)
+	done := make(chan bool)
+	ctx, cancel := context.WithCancel(context.Background())
+	go board.reader(session.Creator, room, done, ctx)
+	go board.reader(session.Player, room, done, ctx)
+	<-done
+	cancel()
 }
 
 func initialstate(session *TypeOf.Players) {

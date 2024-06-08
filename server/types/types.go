@@ -14,6 +14,7 @@ type Players struct {
 	DisableCreator bool
 	Player  *websocket.Conn
 	DisablePlayer bool
+	CloseDummyReader *chan bool
 }
 type LastMove struct {
 	RowIndex int
