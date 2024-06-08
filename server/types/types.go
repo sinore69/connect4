@@ -1,6 +1,8 @@
 package types
 
-import "github.com/gorilla/websocket"
+import (
+	"github.com/gorilla/websocket"
+)
 
 type IncorrectRoomIid struct {
 	Message string
@@ -10,11 +12,11 @@ type RoomId struct {
 }
 
 type Players struct {
-	Creator *websocket.Conn
+	Creator        *websocket.Conn
 	DisableCreator bool
-	Player  *websocket.Conn
-	DisablePlayer bool
-	CloseDummyReader *chan bool
+	Player         *websocket.Conn
+	DisablePlayer  bool
+	DummyReader    chan bool
 }
 type LastMove struct {
 	RowIndex int

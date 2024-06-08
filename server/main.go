@@ -7,6 +7,8 @@ import (
 	"server/game"
 	generator "server/generate"
 	TypeOf "server/types"
+	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -33,6 +35,7 @@ var upgrader = websocket.Upgrader{
 		return true
 	},
 }
+var mutex sync.Mutex
 
 func NewRoom() *Rooms {
 	return &Rooms{
@@ -46,44 +49,49 @@ func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	id := generator.NewRoomId()
-	//done := make(chan bool)
+	done := make(chan bool)
+	mutex.Lock()
 	room.ActiveRooms[id] = TypeOf.Players{
-		Creator:          conn,
-		//CloseDummyReader: &done,
+		Creator:     conn,
+		DummyReader: done,
 	}
+	mutex.Unlock()
 	roomId := &TypeOf.RoomId{
 		Id: id,
 	}
 	conn.WriteJSON(roomId)
-	//close := make(chan bool)
-	//go dummyreader(done, conn, room, id, close)
+	go dummyreader(done, conn, room, id)
 	log.Println(room.ActiveRooms)
-	//<-close
 }
 
-func dummyreader(done <-chan bool, conn *websocket.Conn, room *Rooms, id int, close chan<- bool) {
-	defer log.Println("closing")
+func dummyreader(done <-chan bool, conn *websocket.Conn, room *Rooms, id int) {
+	start := time.Now()
+	var elapsed time.Duration
 outer:
 	for {
+		elapsed = time.Since(start)
 		select {
 		case <-done:
-			log.Println("breaking")
+			log.Println("done")
 			break outer
 		default:
-			_, _, err := conn.ReadMessage()
-			if err != nil {
-				delete(room.ActiveRooms, id)
+			if elapsed > 3*time.Minute {
+				log.Println("connection timeout")
 				conn.Close()
+				mutex.Lock()
+				delete(room.ActiveRooms, id)
+				mutex.Unlock()
 				break outer
 			}
 		}
 	}
-	close <- true
 }
 
 func (board *Board) reader(conn *websocket.Conn, room *Rooms, done chan<- bool, ctx context.Context) {
 	defer conn.Close()
+	defer mutex.Unlock()
 	defer delete(room.ActiveRooms, board.Id)
+	defer mutex.Lock()
 outer:
 	for {
 		select {
@@ -103,7 +111,7 @@ outer:
 				break outer
 			}
 			if game.BoardCompleted(newBoard.Board) {
-				log.Println("error")
+				log.Println("board is complet")
 				endgame(&session, newBoard, true)
 				break outer
 			}
@@ -180,9 +188,9 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	mutex.Lock()
 	session := room.ActiveRooms[id.Id]
-	//*session.CloseDummyReader <- true
-	//close(*session.CloseDummyReader)
+	mutex.Unlock()
 	if session.Creator == nil {
 		error := &TypeOf.IncorrectRoomIid{
 			Message: "No Such Room Id",
@@ -192,8 +200,12 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	} else {
 		conn.WriteJSON(&id)
 	}
+	session.DummyReader <- true
+	close(session.DummyReader)
 	session.Player = conn
+	mutex.Lock()
 	room.ActiveRooms[id.Id] = session
+	mutex.Unlock()
 	log.Println(room.ActiveRooms)
 	board := Board{
 		Id: id.Id,
