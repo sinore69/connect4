@@ -25,7 +25,7 @@ function Page() {
       // console.log(roomId);
       if (roomIdValidator(roomId)) {
         // console.log(socket)
-        router.push(`/game/${roomId.Id}`);
+        router.push(`/game/${roomId.Id}/t`);
       }
     };
   }
@@ -43,7 +43,7 @@ function Page() {
     socket.onmessage = (event) => {
       const res=JSON.parse(event.data)
       if(!incorrectRoomId(res)){
-        router.push(`/game/${res.Id}`);
+        router.push(`/game/${res.Id}/f`);
           // console.log(socket)
       }else{
         console.log(res.Message)

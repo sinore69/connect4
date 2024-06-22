@@ -16,13 +16,13 @@ type board = {
   };
 };
 
-function Page({ params }: { params: { id: string } }) {
+function Page({ params }: { params: { id: string,value:string } }) {
   const socket = useAppSelector((state) => state.socket.socket);
   const message = useAppSelector((state) => state.Message.Text);
   const dispatch = useAppDispatch();
   const [disable, setdisable] = useState<boolean>(true);
   const [moveCount, setMoveCount] = useState<number>(0);
-  const [banner, setbanner] = useState(true);
+  const [banner, setbanner] = useState(params.value==="t"?true:false);
   const [board, setboard] = useState<number[][]>([
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -100,7 +100,7 @@ function Page({ params }: { params: { id: string } }) {
         <div className="flex flex-col">
           <div className="pl-52">{message}</div>
           {banner && (
-            <div className="pl-52 pt-20">share this code:{params.id}</div>
+            <div className="pl-52 pt-20">share this code:{params.id}{}</div>
           )}
         </div>
       </div>
