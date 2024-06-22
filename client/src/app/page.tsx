@@ -5,12 +5,14 @@ import React from "react";
 import { roomIdValidator } from "./validator/roomid";
 import {incorrectRoomId} from "./validator/incorrectroom";
 import { create,join } from "./state/websocket/websocketslice";
-import { useAppDispatch, useAppSelector, useAppStore } from "./lib/hooks";
+import { useAppDispatch, useAppSelector } from "./lib/hooks";
+import { useState } from "react";
 
 function Page() {
   const router = useRouter();
   const dispatch=useAppDispatch()
   const connection=useAppSelector(state=>state.socket.socket)
+  const[error,seterror]=useState("");
 
   function connect() {
     const socket = new WebSocket("ws://127.0.0.1:5000/create");
@@ -44,7 +46,8 @@ function Page() {
         router.push(`/game/${res.Id}`);
           // console.log(socket)
       }else{
-        console.log("incorrect room id")
+        console.log(res.Message)
+        seterror(res.Message)
       }
     };
   }
@@ -52,11 +55,12 @@ function Page() {
   return (
     <div className="h-screen w-sreen flex justify-center">
       <div className="flex flex-col pt-40 gap-y-10">
-        <button onClick={() => connect()}>create session</button>
+        <button onClick={() => connect()}>create room</button>
         <form onSubmit={handler}>
           <input type="text" id="roomId" placeholder="Room Id" />
-          <button type="submit">join session</button>
+          <button type="submit">join room</button>
         </form>
+        <div>{error}</div>
       </div>
     </div>
   );

@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { isInitialState } from "@/app/validator/gamestate";
-import { useAppSelector,useAppDispatch } from "@/app/lib/hooks";
+import { useAppSelector, useAppDispatch } from "@/app/lib/hooks";
 import { isMessage } from "@/app/validator/message";
 import { replace } from "@/app/state/websocket/messageslice";
-
+import { roomIdValidator } from "@/app/validator/roomid";
 type board = {
   Board: number[][];
   MoveCount: number;
@@ -17,12 +17,12 @@ type board = {
 };
 
 function Page({ params }: { params: { id: string } }) {
-
-  const socket = useAppSelector(state=>state.socket.socket)
-  const message=useAppSelector(state=>state.Message.Text)
-  const dispatch =useAppDispatch();
+  const socket = useAppSelector((state) => state.socket.socket);
+  const message = useAppSelector((state) => state.Message.Text);
+  const dispatch = useAppDispatch();
   const [disable, setdisable] = useState<boolean>(true);
   const [moveCount, setMoveCount] = useState<number>(0);
+  const [banner, setbanner] = useState(true);
   const [board, setboard] = useState<number[][]>([
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -40,18 +40,21 @@ function Page({ params }: { params: { id: string } }) {
       const res = JSON.parse(event.data);
       if (isInitialState(res)) {
         setdisable(res.Disable);
-      }else if(isMessage(res)){
-        console.log(event.data)
-        dispatch(replace(res.Text))
-      } 
-      else {
+      } else if (isMessage(res)) {
+        //console.log(event.data);
+        dispatch(replace(res.Text));
+      } else if (roomIdValidator(res)) {
+        console.log(res.Id);
+        dispatch(replace(""))
+        setbanner(false);
+      } else {
         const newboard = res.Board;
         setboard([...newboard]);
         setMoveCount(res.moveCount);
         setdisable(res.Disable);
       }
     };
-  }, [socket,board]);
+  }, [socket, board]);
 
   function handleClick(rowIndex: number, colIndex: number) {
     const data: board = {
@@ -68,7 +71,7 @@ function Page({ params }: { params: { id: string } }) {
 
   return (
     <>
-      <div className="h-screen w-screen pt-28 flex justify-center bg-whitw">
+      <div className="h-screen w-screen pt-28 flex justify-center bg-white">
         <div>
           {board.map((row: number[], rowIndex: number) => (
             <div key={rowIndex} className="flex">
@@ -93,7 +96,13 @@ function Page({ params }: { params: { id: string } }) {
             </div>
           ))}
         </div>
-        <div className="pl-52">{message}</div>
+
+        <div className="flex flex-col">
+          <div className="pl-52">{message}</div>
+          {banner && (
+            <div className="pl-52 pt-20">share this code:{params.id}</div>
+          )}
+        </div>
       </div>
     </>
   );

@@ -48,7 +48,14 @@ func (room *Rooms) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	id := generator.NewRoomId()
+	var id int
+	for{
+		id = generator.NewRoomId()
+		if room.ActiveRooms[id].Creator==nil{
+			break
+		}
+		log.Println("Duplicate Room Id. Generating new Id")
+	}
 	done := make(chan bool)
 	mutex.Lock()
 	room.ActiveRooms[id] = TypeOf.Players{
@@ -111,7 +118,7 @@ outer:
 				break outer
 			}
 			if game.BoardCompleted(newBoard.Board) {
-				log.Println("board is complet")
+				log.Println("board is completed")
 				endgame(&session, newBoard, true)
 				break outer
 			}
@@ -192,10 +199,10 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	session := room.ActiveRooms[id.Id]
 	mutex.Unlock()
 	if session.Creator == nil {
-		error := &TypeOf.IncorrectRoomIid{
-			Message: "No Such Room Id",
+		err := TypeOf.IncorrectRoomIid{
+			Message: "Incorrect RoomId",
 		}
-		conn.WriteJSON(error)
+		conn.WriteJSON(err)
 		return
 	} else {
 		conn.WriteJSON(&id)
@@ -210,7 +217,7 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	board := Board{
 		Id: id.Id,
 	}
-	initialstate(&session)
+	initialstate(&session, &id)
 	done := make(chan bool)
 	ctx, cancel := context.WithCancel(context.Background())
 	go board.reader(session.Creator, room, done, ctx)
@@ -219,11 +226,13 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	cancel()
 }
 
-func initialstate(session *TypeOf.Players) {
+func initialstate(session *TypeOf.Players, id *TypeOf.RoomId) {
 	disable := InitialState{
 		Disable: false,
 	}
+	session.Creator.WriteJSON(&id)
 	session.Creator.WriteJSON(disable)
+	session.Player.WriteJSON(&id)
 }
 
 func main() {
