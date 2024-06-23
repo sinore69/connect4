@@ -16,13 +16,13 @@ type board = {
   };
 };
 
-function Page({ params }: { params: { id: string,value:string } }) {
+function Page({ params }: { params: { id: string; value: string } }) {
   const socket = useAppSelector((state) => state.socket.socket);
   const message = useAppSelector((state) => state.Message.Text);
   const dispatch = useAppDispatch();
   const [disable, setdisable] = useState<boolean>(true);
   const [moveCount, setMoveCount] = useState<number>(0);
-  const [banner, setbanner] = useState(params.value==="t"?true:false);
+  const [banner, setbanner] = useState(params.value === "t" ? true : false);
   const [board, setboard] = useState<number[][]>([
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -40,18 +40,18 @@ function Page({ params }: { params: { id: string,value:string } }) {
       const res = JSON.parse(event.data);
       if (isInitialState(res)) {
         setdisable(res.Disable);
+        setbanner(false);
+        dispatch(replace(res.Disable ? "your opponents turn" : "your turn"));
       } else if (isMessage(res)) {
-        //console.log(event.data);
         dispatch(replace(res.Text));
       } else if (roomIdValidator(res)) {
         console.log(res.Id);
-        dispatch(replace(""))
-        setbanner(false);
       } else {
         const newboard = res.Board;
         setboard([...newboard]);
         setMoveCount(res.moveCount);
         setdisable(res.Disable);
+        dispatch(replace(res.Disable ? "your opponents turn" : "your turn"));
       }
     };
   }, [socket, board]);
@@ -96,11 +96,12 @@ function Page({ params }: { params: { id: string,value:string } }) {
             </div>
           ))}
         </div>
-
-        <div className="flex flex-col">
-          <div className="pl-52">{message}</div>
+        <div className="flex flex-col w-80">
+          <div className="pl-32">{message}</div>
           {banner && (
-            <div className="pl-52 pt-20">share this code:{params.id}{}</div>
+            <div className="pl-32 pt-20">
+              share this code:{params.id}
+            </div>
           )}
         </div>
       </div>

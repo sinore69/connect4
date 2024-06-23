@@ -7,11 +7,13 @@ import {incorrectRoomId} from "./validator/incorrectroom";
 import { create,join } from "./state/websocket/websocketslice";
 import { useAppDispatch, useAppSelector } from "./lib/hooks";
 import { useState } from "react";
+import { replace } from "./state/websocket/messageslice";
 
 function Page() {
   const router = useRouter();
   const dispatch=useAppDispatch()
   const connection=useAppSelector(state=>state.socket.socket)
+  const message=useAppSelector((state)=>state.Message.Text)
   const[error,seterror]=useState("");
 
   function connect() {
@@ -25,6 +27,7 @@ function Page() {
       // console.log(roomId);
       if (roomIdValidator(roomId)) {
         // console.log(socket)
+        dispatch(replace("Waiting for a player to join"))
         router.push(`/game/${roomId.Id}/t`);
       }
     };

@@ -5,7 +5,7 @@ interface Message{
 }
 
 const initialState:Message={
-    Text:"Waiting for a player to join"
+    Text:""
 }
 
 const MessageSlice=createSlice({

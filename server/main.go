@@ -217,7 +217,7 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	board := Board{
 		Id: id.Id,
 	}
-	initialstate(&session, &id)
+	initialstate(&session)
 	done := make(chan bool)
 	ctx, cancel := context.WithCancel(context.Background())
 	go board.reader(session.Creator, room, done, ctx)
@@ -226,13 +226,14 @@ func (room *Rooms) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	cancel()
 }
 
-func initialstate(session *TypeOf.Players, id *TypeOf.RoomId) {
+func initialstate(session *TypeOf.Players) {
 	disable := InitialState{
 		Disable: false,
 	}
-	session.Creator.WriteJSON(&id)
 	session.Creator.WriteJSON(disable)
-	session.Player.WriteJSON(&id)
+	disable.Disable=true
+	time.Sleep(time.Millisecond*150)
+	session.Player.WriteJSON((disable))
 }
 
 func main() {
