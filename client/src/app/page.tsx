@@ -17,7 +17,7 @@ function Page() {
   const[error,seterror]=useState("");
 
   function connect() {
-    const socket = new WebSocket("ws://127.0.0.1:5000/create");
+    const socket = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:5000/create`);
     dispatch(create(socket))
     socket.onopen = (event) => {
       console.log("connection established");
@@ -35,7 +35,7 @@ function Page() {
 
   async function handler(e: any) {
     e.preventDefault();
-    const socket = new WebSocket("ws://127.0.0.1:5000/join");
+    const socket = new WebSocket(`ws://${process.env.NEXT_PUBLIC_IP}:5000/join`);
     dispatch(join(socket))
     socket.onopen = (event) => {
       const data = {
